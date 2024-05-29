@@ -1,0 +1,278 @@
+---
+title: "Homework3"
+format: html
+editor: visual
+---
+
+## Task 1: Conceptual Questions
+
+On the exam, you’ll be asked to explain some topics. How about some practice?! Create a markdown list with the following questions:
+
+1.  If your working directory is myfolder/homework/, what relative path would you specify to get the file located at myfolder/MyData.csv?
+
+> ../MyData.csv
+
+2.  What are the major benefits of using R projects?
+
+> R project could store all related files together for easy access and share. Each R project has its own working directory, which makes it easy to read and write files using relative paths. Also, R projects could keep the project related data, variables, and functions isolated from other projects. Switching between projects is easy and doesn't risk contaminating the global environment.
+
+3.  What is git and what is github?
+
+> Git is a version control system that tracks changes in files over time, which could be used locally to manage versions. GitHub is a web-based hosting platform for Git repositories, which also provides collaboration features.
+
+4.  What are the two main differences between a tibble and a data.frame?
+
+> Tibbles are data.frames that are lazy and surly: they do less and complain more, forcing us to confront problems earlier, typically leading to cleaner, more expressive code. The two main differences are:\
+> **1)** when we print a tibble, it will give only first few rows/columns, which will not clog up our output space.\
+> **2)** tibble will not coerce down to a vector when we subset to only one column using \[, it will still return a tibble.
+
+5.  Rewrite the following nested function call using baseR’s chaining operator: arrange(filter(select(as_tibble(iris), starts_with("Petal"), Species), Petal.Length \< 1.55), Species)
+
+> library(dplyr)\
+> as_tibble(iris) \|\>\
+> select(starts_with("Petal"), Species) \|\> filter(Petal.Length \< 1.55) \|\>\
+> arrange(Species)
+
+6.  What is meant by long format data and wide format data? Which do we generally prefer for statistical analysis?
+
+> The long format means each row consists of one observation and each column one variable, while the wide format means more than one observation are in a given row. The long format is usually preferred for statistical analysis.
+
+## Task 2 Reading Delimited Data
+
+Note: Use chaining where possible!\
+The data sets we’ll use for this part comes from the UCI machine learning repository.
+
+### Glass data
+
+**1. Read this data into R directly from the URL using functions from the tidyverse. Notice that the data doesn’t include column names - add those (in a manner of your choosing). Print out the tibble (just call the object name).**
+
+```{r}
+library(readr)
+glass_data <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/glass.data",
+                       col_names = c("Id", "RI", "Na", "Mg", "Al", "Si", "K"
+                                     , "Ca", "Ba", "Fe", "Type_of_glass"))
+glass_data
+```
+
+**2. Start a chain that would overwrite the Type_of_glass variable using mutate(). Create a character string version (that is, replace 1 with “building_windows_float_processed”, 2 with “building_win. . . ”, etc.) instead (see the variable descriptions above to give meaningful values). (If you are familiar with factors, feel free to use that instead of a character string variable - otherwise, think if/then/else via ifelse().)**
+
+```{r}
+library(tidyverse)
+glass_data |>
+  mutate(Type_of_glass = factor(Type_of_glass, levels = 1:7, labels = 
+                                  c("building_windows_float_processed",
+                                    "building_windows_non_float_processed",
+                                    "vehicle_windows_float_processed", 
+                                    "vehicle_windows_non_float_processed",
+                                    "containers", 
+                                    "tableware", 
+                                    "headlamps")))
+```
+
+**3. Continue your chain and keep only observations where the Fe variable is less than 0.2 and the Type of Glass is either “tableware” or “headlamp”.**
+
+```{r}
+glass_data |>
+  mutate(Type_of_glass = factor(Type_of_glass, levels = 1:7, labels = 
+                                  c("building_windows_float_processed",
+                                    "building_windows_non_float_processed",
+                                    "vehicle_windows_float_processed", 
+                                    "vehicle_windows_non_float_processed",
+                                    "containers", 
+                                    "tableware", 
+                                    "headlamps"))) |>
+  filter (Fe < 0.2, Type_of_glass %in% c("tableware", "headlamps"))
+```
+
+### Yeast data
+
+**1. Read this data into R directly from the URL using functions from the tidyverse. Notice that the data doesn’t include column names - add those (in a manner of your choosing). Print out the tibble (just call the object name).**
+
+```{r}
+yeast_data <- read_table("https://www4.stat.ncsu.edu/~online/datasets/yeast.data",
+                         col_names = c("seq_name", "mcg", "gvh", "alm", "mit", 
+                                       "erl", "pox", "vac", "nuc", "class"))
+yeast_data
+```
+
+**2. Start a chain that removes the seq_name and nuc columns.**
+
+```{r}
+yeast_data |>
+  select(-seq_name, -nuc)
+```
+
+**3. Continue your chain to add columns corresponding to the mean and median of each numeric variable (mcg, gvh, alm, mit, erl, pox, and vac) at each class grouping (see the across() function as we did in the dplyr video!).**
+
+```{r}
+yeast_data |>
+  select(-seq_name, -nuc) |>
+  group_by(class) |>
+  mutate(across(where(is.numeric), list(mean = mean, median = median), .names = "{.col}_{.fn}"))
+```
+
+## Task 2: Combining Excel and Delimited Data
+
+**1. There is an excel version of the white wine data set available at https://www4.stat.ncsu.edu/\~online/datasets/white-wine.xlsx.**\
+- Download this file\
+- Place it in a folder you know (such as your working directory for your project)\
+- Import the data from the first sheet using the readxl package\
+- Print out the tibble (just call the object name)
+
+```{r}
+library(readxl)
+white_wine_data <- read_excel("white-wine.xlsx",
+                              sheet = excel_sheets("white-wine.xlsx")[1])
+white_wine_data
+```
+
+**2. When you print the data set out to the console, you may notice that some of the variable names are surrounded by backticks. This is because they are non-standard (they include a space in them). We can rename them in a number of ways. We’ll do it by reading in the variable names from the 2nd sheet of the same file.**\
+- Read in the data from the 2nd sheet. This should return a data frame with one column containing alternative versions of the variable names.\
+- Grab that column and overwrite the current column names (colnames()) of your white wine tibble.
+
+```{r}
+variable_names <- read_excel("white-wine.xlsx",
+                              sheet = excel_sheets("white-wine.xlsx")[2])
+colnames(white_wine_data) <- as.character(variable_names$Variables)
+white_wine_data
+```
+
+**3. Lastly, add a column to this data set to indicate the wines are white. That is, add a column that has values of ‘white’ for every observation.**
+
+```{r}
+white_wine_data <- white_wine_data |>
+  mutate(type = "white")
+white_wine_data
+```
+
+**4. There is a semi-colon delimited version of the red wine data set available at https://www4.stat.ncsu.edu/\~online/datasets/red-wine.csv.**\
+- Read this in using the readr package. Be careful that the columns are read in as the correct type! - You should replace the variable names as done above.\
+- You should append a column denoting the type as “red”.
+
+```{r}
+red_wine_data <- read_csv2("https://www4.stat.ncsu.edu/~online/datasets/red-wine.csv",
+                           col_types = cols(.default = "d"))
+colnames(red_wine_data) <- as.character(variable_names$Variables)
+red_wine_data <- red_wine_data |>
+  mutate(type = "red")
+red_wine_data 
+```
+
+**5. Combine these two data sets into one data set. They both have the exact same columns so this is an easy append task!**\
+- Use the dplyr::bind_rows() function (see the help) to create one tibble containing all of the wine data.
+
+```{r}
+wine_data <- bind_rows(white_wine_data, red_wine_data)
+wine_data
+```
+
+**6. Start a chain on your new combined data object to filter the data to only look at high-quality wines (quality \> 6.5) and wines that have a reasonable alcohol value (alcohol \< 132).**
+
+```{r}
+white_wine_data |> 
+  filter(quality > 6.5, alcohol < 132)
+```
+
+**7. Continue your chain to now sort the data from highest quality to lowest.**
+
+```{r}
+white_wine_data |> 
+  filter(quality > 6.5, alcohol < 132) |>
+  arrange(desc(quality))
+```
+
+**8. Continue your chain to select only the variables that contain acid, the alcohol variable, the type variable, and the quality variable.**
+
+```{r}
+white_wine_data |> 
+  filter(quality > 6.5, alcohol < 132) |>
+  arrange(desc(quality)) |>
+  select(contains("acid"), alcohol, type, quality)
+```
+
+**9. Continue your chain to add the mean and standard deviation of the alcohol variable to the data set for each setting of the quality variable.**
+
+```{r}
+white_wine_data |> 
+  filter(quality > 6.5, alcohol < 132) |>
+  arrange(desc(quality)) |>
+  select(contains("acid"), alcohol, type, quality) |>
+  group_by(quality) |>
+  mutate (alcohol_mean = mean(alcohol), 
+          alcohol_sd = sd(alcohol))
+```
+
+## Task 3: Database Practice
+
+**Download the Lahman.db file associated with the Connecting to Databases notes/video.**\
+**1. Connect to the database and then look at all of the tables in the database.**
+
+```{r}
+library(DBI)
+con <- dbConnect(RSQLite::SQLite(), "lahman.db")
+dbListTables(con)
+```
+
+**2. Use the tbl() function and dplyr to return all of the data from the Teams table for the year 2015.**
+
+```{r}
+tbl(con, "Teams") |>
+  filter(yearID == 2015) |>
+  collect()
+```
+
+**3. Repeat the above by using the sql() function within tbl() (here you have to write actual SQL!).**
+
+```{r}
+tbl(con, sql("SELECT `Teams`.*
+             FROM `Teams`
+             WHERE (`yearID` = 2015.0)")) |>
+  collect()
+```
+
+**Either use dplyr or write SQL queries for the rest of these questions!**\
+
+**4. Return all of the players in the hall of fame, the year they were voted into the hall of fame, and their category (only those three variables!). See the HallOfFame table, the inducted variable is important here.**
+
+```{r}
+player_data <- tbl(con, "HallOfFame") |>
+  filter(inducted == "Y") |>
+  select(playerID, yearID, category) |>
+  collect()
+player_data
+```
+
+**5. Combine the table from the previous question with the People table in order to have the nameFirst and nameLast names added to what was returned above.**
+
+```{r}
+people_data <- tbl(con, "People") |>
+  select(playerID, nameFirst, nameLast) |>
+  collect()
+player_data <- left_join(player_data, people_data, by = "playerID")
+player_data
+```
+
+**6. Return only the playerID (manager ID in this case), G, W, and L columns from the Managers table. Use chaining to then:**\
+**- Determine the overall win/loss records (sum of wins and sum of losses) for each of these hall of fame managers.**\
+– We haven’t quite covered this so I’ll help out. We want to use group_by() with summarize() rather than mutate().\
+**- Create a new variable that is the career win/loss percentage (Total_W/G_managed). (Note: I did this after collect() otherwise the column type has to be set...)**\
+**- Sort the resulting data by the win/loss percentage variable (from largest to smallest).**
+
+```{r}
+manager_data <- tbl(con, "Managers") |>
+  select(playerID, G, W, L) |>
+  group_by(playerID) |>
+  summarize(G_managed = sum(G, na.rm = TRUE),
+            Total_W = sum(W, na.rm = TRUE),
+            Total_L = sum(L, na.rm = TRUE)) |>
+  collect() |>
+  mutate(win_loss_percentage = Total_W / G_managed) |>
+  arrange(desc(win_loss_percentage))
+manager_data
+```
+
+**7. Use the results from the previous two questions to answer this one! Return information for only the people that managed a team and were inducted into the hall of fame (regardless of their category in the hall of fame - you want to return all people in the hall of fame that ever managed at all). (Just return all of the variables from both of the above two questions - 9 total columns)**
+
+```{r}
+inner_join(player_data, manager_data, by = "playerID")
+```
