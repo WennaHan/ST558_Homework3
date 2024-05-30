@@ -269,6 +269,7 @@ manager_data <- tbl(con, "Managers") |>
   mutate(win_loss_percentage = Total_W / G_managed) |>
   arrange(desc(win_loss_percentage))
 manager_data
+dbDisconnect(con)
 ```
 
 **7. Use the results from the previous two questions to answer this one! Return information for only the people that managed a team and were inducted into the hall of fame (regardless of their category in the hall of fame - you want to return all people in the hall of fame that ever managed at all). (Just return all of the variables from both of the above two questions - 9 total columns)**
