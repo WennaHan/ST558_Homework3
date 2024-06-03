@@ -30,7 +30,8 @@ On the exam, you’ll be asked to explain some topics. How about some practice?!
 
 > library(dplyr)\
 > as_tibble(iris) \|\>\
-> select(starts_with("Petal"), Species) \|\> filter(Petal.Length \< 1.55) \|\>\
+> select(starts_with("Petal"), Species) \|\>\
+> filter(Petal.Length \< 1.55) \|\>\
 > arrange(Species)
 
 6.  What is meant by long format data and wide format data? Which do we generally prefer for statistical analysis?
@@ -49,8 +50,9 @@ The data sets we’ll use for this part comes from the UCI machine learning repo
 ```{r}
 library(readr)
 glass_data <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/glass.data",
-                       col_names = c("Id", "RI", "Na", "Mg", "Al", "Si", "K"
-                                     , "Ca", "Ba", "Fe", "Type_of_glass"))
+                       col_names = c("Id", "RI", "Na", "Mg", "Al", 
+                                     "Si", "K", "Ca", "Ba", "Fe",
+                                     "Type_of_glass"))
 glass_data
 ```
 
@@ -62,7 +64,7 @@ glass_data |>
   mutate(Type_of_glass = factor(Type_of_glass, levels = 1:7, labels = 
                                   c("building_windows_float_processed",
                                     "building_windows_non_float_processed",
-                                    "vehicle_windows_float_processed", 
+                                    "vehicle_windows_float_processed",
                                     "vehicle_windows_non_float_processed",
                                     "containers", 
                                     "tableware", 
@@ -150,12 +152,12 @@ white_wine_data
 - You should append a column denoting the type as “red”.
 
 ```{r}
-red_wine_data <- read_csv2("https://www4.stat.ncsu.edu/~online/datasets/red-wine.csv",
-                           col_types = cols(.default = "d"))
+red_wine_data <- read_delim("https://www4.stat.ncsu.edu/~online/datasets/red-wine.csv",
+                            delim = ";")
 colnames(red_wine_data) <- as.character(variable_names$Variables)
 red_wine_data <- red_wine_data |>
   mutate(type = "red")
-red_wine_data 
+red_wine_data
 ```
 
 **5. Combine these two data sets into one data set. They both have the exact same columns so this is an easy append task!**\
@@ -169,14 +171,14 @@ wine_data
 **6. Start a chain on your new combined data object to filter the data to only look at high-quality wines (quality \> 6.5) and wines that have a reasonable alcohol value (alcohol \< 132).**
 
 ```{r}
-white_wine_data |> 
+wine_data |> 
   filter(quality > 6.5, alcohol < 132)
 ```
 
 **7. Continue your chain to now sort the data from highest quality to lowest.**
 
 ```{r}
-white_wine_data |> 
+wine_data |> 
   filter(quality > 6.5, alcohol < 132) |>
   arrange(desc(quality))
 ```
@@ -184,7 +186,7 @@ white_wine_data |>
 **8. Continue your chain to select only the variables that contain acid, the alcohol variable, the type variable, and the quality variable.**
 
 ```{r}
-white_wine_data |> 
+wine_data |> 
   filter(quality > 6.5, alcohol < 132) |>
   arrange(desc(quality)) |>
   select(contains("acid"), alcohol, type, quality)
@@ -193,7 +195,7 @@ white_wine_data |>
 **9. Continue your chain to add the mean and standard deviation of the alcohol variable to the data set for each setting of the quality variable.**
 
 ```{r}
-white_wine_data |> 
+wine_data |> 
   filter(quality > 6.5, alcohol < 132) |>
   arrange(desc(quality)) |>
   select(contains("acid"), alcohol, type, quality) |>
@@ -269,11 +271,11 @@ manager_data <- tbl(con, "Managers") |>
   mutate(win_loss_percentage = Total_W / G_managed) |>
   arrange(desc(win_loss_percentage))
 manager_data
-dbDisconnect(con)
 ```
 
 **7. Use the results from the previous two questions to answer this one! Return information for only the people that managed a team and were inducted into the hall of fame (regardless of their category in the hall of fame - you want to return all people in the hall of fame that ever managed at all). (Just return all of the variables from both of the above two questions - 9 total columns)**
 
 ```{r}
 inner_join(player_data, manager_data, by = "playerID")
+dbDisconnect(con)
 ```
